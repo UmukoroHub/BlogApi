@@ -14,14 +14,17 @@ public class CustomUnauthorizedMiddleware
 
     public async Task Invoke(HttpContext context)
     {
-        await _next(context);
+        await _next(context); // Ensure request is processed first
 
         if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
         {
-            context.Response.ContentType = "application/json";
-            var response = new { message = "Access Denied! You are not authorized to perform this action." };
-            var jsonResponse = JsonSerializer.Serialize(response);
-            await context.Response.WriteAsync(jsonResponse);
+            if (!context.Response.HasStarted) // ✅ Check if response has started
+            {
+                context.Response.ContentType = "application/json";
+                var response = new { message = "Access Denied! You are not authorized to perform this action." };
+                var jsonResponse = JsonSerializer.Serialize(response);
+                await context.Response.WriteAsync(jsonResponse);
+            }
         }
     }
 }
